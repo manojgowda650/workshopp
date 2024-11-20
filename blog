@@ -1,0 +1,60 @@
+import cohere
+import streamlit as st
+
+# Load the Cohere API key from environment variables or manually set it here
+COHERE_API_KEY = "2ptxsRzQWhvEywiO4g9IaXrvQrKiL9XrtkGHun4M"  # Replace with your Cohere API key
+
+# Initialize Cohere client
+co = cohere.Client('2ptxsRzQWhvEywiO4g9IaXrvQrKiL9XrtkGHun4M')
+
+## Function to get response from Cohere API
+def get_cohere_response(input_text, no_words, blog_style):
+    # Create the prompt based on the inputs
+    prompt = f"""
+    Write a blog targeted towards {blog_style} about the topic: "{input_text}". The blog should be engaging, informative, and within {no_words} words.
+    """
+    
+    try:
+        # Generate the blog using Cohere
+        response = co.generate(
+            model="command",  # Use the Cohere "command" model for general-purpose tasks
+            prompt=prompt,
+            max_tokens=int(no_words) * 5 // 4,  # Approximate token-to-word ratio
+            temperature=0.6,  # Adjust creativity
+            stop_sequences=["\n\n"]
+        )
+        return response.generations[0].text.strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+
+# Set up the Streamlit app
+st.set_page_config(page_title="Generate Blogs",
+                   page_icon="🤖",
+                   layout="centered",
+                   initial_sidebar_state="collapsed")
+
+st.header("Generate Blogs 🤖")
+
+# Input fields for blog topic
+input_text = st.text_input("Enter the Blog Topic")
+
+# Additional fields for number of words and target audience
+col1, col2 = st.columns([5, 5])
+
+with col1:
+    no_words = st.text_input("Number of Words", value="150")
+with col2:
+    blog_style = st.selectbox("Writing the blog for",
+                              ("Researchers", "Data Scientists", "Common People"), index=0)
+
+# Submit button
+submit = st.button("Generate")
+
+# Generate and display the blog response
+if submit:
+    if input_text and no_words.isdigit():
+        st.subheader("Generated Blog:")
+        response = get_cohere_response(input_text, no_words, blog_style)
+        st.write(response)
+    else:
+        st.error("Please provide a valid blog topic and number of words.")
