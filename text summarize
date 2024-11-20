@@ -1,0 +1,38 @@
+import streamlit as st
+import cohere
+
+# Initialize the Cohere client with your API key
+API_KEY = 'plefNO4jx33CV3WSBhndABbnlvAQ2SjumrCELAMx'
+co = cohere.Client(API_KEY)
+
+# Streamlit interface
+st.title("Text Summarization with Cohere")
+st.write("Enter your text below to generate a concise summary using Cohere's AI.")
+
+# Text input field
+text_to_summarize = st.text_area("Enter the text to summarize:", height=200)
+
+# Summarization settings
+length = st.selectbox("Select summary length:", options=["short", "medium", "long"])
+format_type = st.selectbox("Select summary format:", options=["paragraph", "bullet_points"])
+extractiveness = st.selectbox("Select extractiveness level:", options=["low", "medium", "high"])
+temperature = st.slider("Adjust creativity (temperature):", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
+
+# Generate summary when button is clicked
+if st.button("Generate Summary"):
+    if text_to_summarize.strip():
+        try:
+            # Use Cohere's `summarize` method
+            response = co.summarize(
+                text=text_to_summarize,
+                length=length,
+                format=format_type,
+                extractiveness=extractiveness,
+                temperature=temperature,
+            )
+            st.subheader("Summary:")
+            st.write(response.summary)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+    else:
+        st.error("Please enter valid text to summarize.")
