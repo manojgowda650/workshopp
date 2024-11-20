@@ -1,0 +1,90 @@
+import streamlit as st
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+from io import BytesIO
+
+# Function to generate PDF
+def generate_pdf(tasks):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Set up the title
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(100, height - 40, "RAG Status Report")
+    
+    # Set up column headers
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(100, height - 80, "Task Name")
+    c.drawString(300, height - 80, "Status")
+    c.drawString(500, height - 80, "Comments")
+    
+    # Set the font for the data
+    c.setFont("Helvetica", 12)
+    
+    # Setting y position for the rows
+    y_position = height - 100
+    
+    for task, status, comment in tasks:
+        # Draw task name
+        c.drawString(100, y_position, task)
+        
+        # Draw status with color
+        if status == "Red":
+            c.setFillColor(colors.red)
+        elif status == "Amber":
+            c.setFillColor(colors.orange)
+        else:  # Green
+            c.setFillColor(colors.green)
+        
+        c.drawString(300, y_position, status)
+        
+        # Reset color for comment text
+        c.setFillColor(colors.black)
+        c.drawString(500, y_position, comment)
+        
+        # Adjust y position for the next row
+        y_position -= 20
+    
+    # Finalize and save the PDF
+    c.showPage()
+    c.save()
+    
+    buffer.seek(0)
+    return buffer
+
+# Streamlit UI setup
+st.set_page_config(page_title="RAG Status Report Generator", layout="centered")
+st.title("RAG Status Report Generator")
+
+# Collect user input for tasks and status
+num_tasks = st.number_input("Enter the number of tasks", min_value=1, max_value=10, value=1)
+
+tasks = []
+for i in range(num_tasks):
+    task_name = st.text_input(f"Task {i + 1} Name")
+    status = st.selectbox(f"Task {i + 1} Status", options=["Red", "Amber", "Green"], key=f"status_{i + 1}")
+    comment = st.text_input(f"Task {i + 1} Comment", key=f"comment_{i + 1}")
+    
+    if task_name:
+        tasks.append((task_name, status, comment))
+
+# Button to generate the PDF
+if st.button("Generate RAG Report"):
+    if tasks:
+        # Generate PDF
+        pdf_file = generate_pdf(tasks)
+        
+        # Provide download link
+        st.success("PDF generated successfully!")
+        
+        # Create download link
+        st.download_button(
+            label="Download PDF",
+            data=pdf_file,
+            file_name="RAG_Status_Report.pdf",
+            mime="application/pdf"
+        )
+    else:
+	st.warning("Please add at least one task with a status.")   
