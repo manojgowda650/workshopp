@@ -1,0 +1,54 @@
+import streamlit as st
+import cohere
+
+# Initialize Cohere client
+COHERE_API_KEY = "plefNO4jx33CV3WSBhndABbnlvAQ2SjumrCELAMx"  # Replace with your actual Cohere API key
+co = cohere.Client(COHERE_API_KEY)
+
+# Streamlit UI
+st.set_page_config(page_title="Conversational Q&A Chatbot")
+st.header("Hey, Let's Chat")
+
+# Initialize session state for conversation history
+if 'conversation_history' not in st.session_state:
+    st.session_state['conversation_history'] = [
+        "You are a comedian AI assistant. Let's chat!"
+    ]
+
+# Function to get response from Cohere
+def get_cohere_response(question):
+    # Build the conversation prompt with history
+    prompt = "\n".join(st.session_state['conversation_history']) + f"\nHuman: {question}\nAI:"
+    
+    # Call Cohere's API to generate a response
+    response = co.generate(
+        model="command-xlarge-20221108",  # Replace with the appropriate model if needed
+        prompt=prompt,
+        max_tokens=150,
+        temperature=0.5,
+    )
+    
+    # Extract the response text
+    ai_response = response.generations[0].text.strip()
+    
+    # Update the conversation history
+    st.session_state['conversation_history'].append(f"Human: {question}")
+    st.session_state['conversation_history'].append(f"AI: {ai_response}")
+    
+    return ai_response
+
+# Input from the user
+input_question = st.text_input("Input: ", key="input")
+submit = st.button("Ask the question")
+
+# If the submit button is clicked
+if submit:
+    if input_question.strip():  # Ensure input is not empty
+        st.subheader("The Response is")
+        try:
+            response = get_cohere_response(input_question)
+            st.write(response)
+        except Exception as e:
+            st.error(f"Error: {e}")
+    else:
+        st.error("Please enter a question!")
